@@ -21,7 +21,7 @@ plot(cars)
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
 
-## Set global settings for this markdown.
+## Set global settings for this R markdown.
 ```{r}
 echo = TRUE  ## This makes code visible.
 options(scipen = 1)  ## Disable a number's scientific notation.
