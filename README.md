@@ -14,7 +14,7 @@ should  be generated and displayed.
 
 The evaluator can simply open the HTML file on the repository, copy and paste it onto a new file and then save, for example, as RR01.html which can be viewed using a browser such as Google. 
 
-********** AGAIN, I am using public internet now and having problems uploading the file containing screenshots of my plots. SO 
-PLEASE SIMPLY OPEN the HTML file on the repository, and copy and paste it into a new file, for example, PA1_templateXX.html
-and save it, and use a browser to open and display the HTML file.
-You should be able to see ALL PLOTS required on this Peer Assessment 01 on the resulting web page. **********
+
+To view all plots corresponding to my submission, without generating the corresponding web page, kindly click on this link which is on my ReproducibleResearch repository's issues section:
+
+https://github.com/github722105/ReproducibleResearch/issues/1
