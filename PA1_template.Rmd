@@ -1,0 +1,163 @@
+---
+title: 'Reproducible Research: Peer Assessment 1'
+author: "Ferdinand DeRamos"
+date: "Sunday, May 17, 2015"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Set global settings for this markdown.
+```{r}
+echo = TRUE  ## This makes code visible.
+options(scipen = 1)  ## Disable a number's scientific notation.
+```
+
+## Pre-processing and reading of input data.
+```{r}
+unzip("activity.zip", exdir = "./reproducible_research")
+input_data <- read.csv("./reproducible_research/activity.csv", 
+                       colClasses = c("integer", "Date", "factor"))
+input_data$month <- as.numeric(format(input_data$date, "%m"))
+NA_free <- na.omit(input_data)
+rownames(NA_free) <- 1:nrow(NA_free)
+head(NA_free)
+dim(NA_free)
+library(ggplot2)
+```
+
+
+## Mean total number of steps taken per day?
+Ignore the missing values in the dataset.
+
+* Histogram of total number of steps taken each day.
+```{r}
+ggplot(NA_free, aes(date, steps)) + geom_bar(stat = "identity", colour = "steelblue", fill = "steelblue", width = 0.7) + facet_grid(. ~ month, scales = "free") + labs(title = "Histogram of total number of steps taken each day", x = "Date", y = "Total number of steps")
+```
+
+* Determine the mean and median total number of steps taken per day.
+
+Mean total number of steps taken each day:
+```{r}
+total_steps <- aggregate(NA_free$steps, list(Date = NA_free$date), FUN = "sum")$x
+mean(total_steps)
+```
+Median total number of steps taken each day.
+```{r}
+median(total_steps)
+```
+
+## Average daily activity pattern.
+* Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+```{r}
+avg_steps <- aggregate(NA_free$steps, list(interval = as.numeric(as.character(NA_free$interval))), FUN = "mean")
+names(avg_steps)[2] <- "mean_of_steps"
+
+ggplot(avg_steps, aes(interval, mean_of_steps)) + geom_line(color = "steelblue", size = 0.8) + labs(title = "Time Series Plot of the 5-minute Interval", x = "5-minute intervals", y = "Average number of steps taken")
+```
+
+* Determine which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps.
+```{r}
+avg_steps[avg_steps$mean_of_steps == max(avg_steps$mean_of_steps), ]
+```
+
+## Determining the number of missing values
+* The total number of rows with NAs:
+
+```{r}
+sum(is.na(data))
+```
+
+* Find missing values in the dataset using the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+The mean for 5-minute interval is used to fill in each NA value in the steps column.
+
+* Create a new dataset based on original dataset with missing data determined and provided.
+
+```{r}
+new_data <- input_data 
+for (i in 1:nrow(new_data)) {
+    if (is.na(new_data$steps[i])) {
+        new_data$steps[i] <- avg_steps[which(new_data$interval[i] == avg_steps$interval), ]$mean_of_steps
+    }
+}
+
+head(new_data)
+sum(is.na(new_data))
+```
+
+* Generate histogram of total number of steps taken each day, and calculate and report mean and median total number of steps taken per day.
+
+```{r}
+ggplot(new_data, aes(date, steps)) + geom_bar(stat = "identity",
+       colour = "steelblue", fill = "steelblue",  width = 0.7) + facet_grid(. ~ month, scales = "free") + labs(title = "Histogram of Total Number of Steps Taken Each Day (no missing data)", x = "Date", y = "Total number of steps")
+```
+
+* Figure out whether values differ from estimates of assignment's first part. Explain the impact of inputting missing data on estimates of total daily number of steps.
+
+Calculate mean total number of steps taken per day:
+```{r}
+newtotal_steps <- aggregate(new_data$steps, 
+                           list(Date = new_data$date), 
+                           FUN = "sum")$x
+new_mean <- mean(newtotal_steps)
+new_mean
+```
+Median total number of steps taken per day:
+```{r}
+new_median <- median(newtotal_steps)
+new_median
+```
+Compare new data with first two observations before inputting missing data:
+```{r}
+old_mean <- mean(total_steps)
+old_median <- median(total_steps)
+new_mean - old_mean
+new_median - old_median
+```
+Providing missing data, the new mean of total steps taken per day remains the same as the old mean but the new median of total steps taken per day is greater than the old median.
+
+## Differences in activity patterns between weekdays and weekends.
+
+* New factor variable in the dataset with two levels: "weekday" (a given date is a weekday) and "weekend" (weekend day).
+
+```{r}
+head(new_data)
+new_data$weekdays <- factor(format(new_data$date, "%A"))
+levels(new_data$weekdays)
+levels(new_data$weekdays) <- list(weekday = c("Monday", "Tuesday",              
+                                              "Wednesday", 
+                                             "Thursday", "Friday"),
+                                 weekend = c("Saturday", "Sunday"))
+levels(new_data$weekdays)
+table(new_data$weekdays)
+```
+
+* Time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken calculated across all weekday days or weekend days (y-axis).
+
+```{r}
+avg_steps <- aggregate(new_data$steps, 
+                      list(interval = as.numeric(as.character(new_data$interval)), 
+                           weekdays = new_data$weekdays),
+                      FUN = "mean")
+names(avg_steps)[3] <- "mean_of_steps"
+library(lattice)
+xyplot(avg_steps$mean_of_steps ~ avg_steps$interval | avg_steps$weekdays, 
+       layout = c(1, 2), type = "l", 
+       xlab = "Interval", ylab = "Number of steps")
+```
